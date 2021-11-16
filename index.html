@@ -1,107 +1,80 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Textos</title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-      html {font-family: sans-serif; text-align: center}
-      body {display: inline-block; text-align: left}
-      *:required, .obligatorio {border: thin solid blue}
-      input[type=number], .numero {text-align: right}
-      .error {color:red}
-    </style>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Autenticación</title>
+    <link rel="stylesheet" href="estilos.css">
+
+   <!-- Carga el núcleo de Firebase JS SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <!-- Agrega el manejo de autenticación. -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js">
+    </script>
+    <script src="js/init.js"></script>
   </head>
   <body>
-    <header>
-      <h1>Textos</h1>
-    </header>
-    <form id="forma" action="javascript:;">
-      <p><em>El borde azul indica que es obligatorio</em></p>
-      <p>
-        <label accesskey="N">
-          Nombre<br>
-          <input name="nombre" type="text" autofocus required pattern=".{1,30}"
-                 maxlength="30" size="33" placeholder="1 a 30 caracteres">
-        </label>
-        <br><output id="salidaNombre"></output>
-      </p>
-      <p>
-        <label accesskey="S">
-          Secreto<br>
-          <input name="secreto" type="password" autocomplete="off" required
-                 pattern=".{5,30}"
-                 maxlength="30" size="33" placeholder="5 a 30 caracteres">
-        </label>
-        <br><output id="salidaSecreto"></output>
-      </p>
-      <p>
-       <label accesskey="l"> 
-          Navegador de Internet<br>
-          <input name="navegador" type="text" required list="navegadores">
-        </label>
-        <br><output id="salidaNavegador"></output>
-      </p>
-      <p>
-        <label accesskey="C">
-          Correo Electrónico<br>
-          <input name="email" type="email" required size="33">
-        </label>
-        <br><output id="salidaEmail"></output>
-      </p>
-      <p>
-        <label accesskey="U">
-          Usuario<br>
-          <input name="usuario" type="text" pattern="[A-Za-z0-9]{4,16}" required
-                 maxlength="16" size="19" placeholder="4 a 16 letras o dígitos">
-        </label>
-        <br><output id="salidaUsuario"></output>
-      </p>
-      <p>
-        <label accesskey="F">
-          URL Favorita<br>
-          <input name="url" type="url" required size="33" value="http://">
-        </label>
-        <br><output id="salidaUrl"></output>
-      </p>
-      <p>
-        <label accesskey="T">
-          Teléfono<br>
-          <input name="telefono" type="tel" required pattern="\d{10,12}"
-                 maxlength="12" size="14" placeholder="10 a 12 dígitos">
-        </label>
-        <br><output id="salidaTelefono"></output>
-      </p>
-      <p>
-        <label accesskey="B">
-          Buscar <br>
-          <input name="buscar" type="search" result="5" autosave="buscar" size="17"
-                 required placeholder="Buscar">
-        </label>
-        <br><output id="salidaBuscar"></output>
-      </p>
-      <p>
-        <label accesskey="V">
-          Verso<br>
-          <textarea name="verso" required rows="5" cols="30"
-                    placeholder="Un verso que te recuerde tu infancia"></textarea>
-        </label>
-        <br><output id="salidaVerso"></output>
-      </p>
-
-      <p><input type="submit" value="Procesar" accesskey="P"></p>
-    </form>
-    <footer>
-      Copyright 2021 Yo
-    </footer>
-    <datalist id="navegadores">
-      <option value="Internet Explorer">
-      <option value="Safari">
-      <option value="Chrome">
-      <option value="Edge">
-      <option value="Firefox">
-      <option value="Opera">
-    </datalist>
-    <script src="js/CtrlTextos.js"></script>
+    <h1>Autenticación</h1>
+    <h1>Sesión</h1>
+    <fieldset>
+      <legend>Email</legend>
+      <output id="email"><progress max="100">Cargando…</progress></output>
+    </fieldset>
+    <fieldset>
+      <legend>Nombre</legend>
+      <output id="nombre"></output>
+    </fieldset>
+    <figure><img id="avatar" alt="Avatar"></figure>
+    <button type="button" onclick="terminaSesión()">Terminar Sesión</button>
+    <footer>Copyright &copy; 2021 Ana Paula Sánchez.</footer>
+    <script>
+      //@ts-check
+      /** Conexión al sistema de autenticación de Firebase. */
+      // @ts-ignore
+      const auth = firebase.auth();
+      /** Tipo de autenticación de usuarios. En este caso es con Google. */
+      // @ts-ignore
+      const provider = new firebase.auth.GoogleAuthProvider();
+      /* Configura el proveedor de Google para que permita seleccionar de una
+       * lista. */
+      provider.setCustomParameters({ prompt: "select_account" });
+      /* Recibe una función que se invoca cada que hay un cambio en la
+       * autenticación y recibe el modelo con las características del usuario.*/
+      auth.onAuthStateChanged(
+        /** Recibe las características del usuario o null si no ha iniciado
+         * sesión. */
+        usuarioAuth => {
+          if (usuarioAuth && usuarioAuth.email) {
+            // Usuario aceptado.
+            // @ts-ignore Muestra el email registrado en Google.
+            email.value = usuarioAuth.email;
+            // @ts-ignore Muestra el nombre registrado en Google.
+            nombre.value = usuarioAuth.displayName;
+            // @ts-ignore Muestra el avatar registrado en Google.
+            avatar.src = usuarioAuth.photoURL;
+          } else {
+            // No ha iniciado sesión. Pide datos para iniciar sesión.
+            auth.signInWithRedirect(provider);
+          }
+        },
+        // Función que se invoca si hay un error al verificar el usuario.
+        procesaError
+      );
+      /** Termina la sesión. */
+      async function terminaSesión() {
+        try {
+          await auth.signOut();
+        } catch (e) {
+          procesaError(e);
+        }
+      }
+      /** Procesa un error. Muestra el objeto en la consola y un cuadro de
+       * alerta con el mensaje.
+       * @param {Error} e descripción del error. */
+      function procesaError(e) {
+        console.log(e);
+        alert(e.message);
+      }
+    </script>
   </body>
 </html>
